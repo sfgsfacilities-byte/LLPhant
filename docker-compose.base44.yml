@@ -1,0 +1,29 @@
+services:
+  php:
+    container_name: llphant-base44-php
+    build:
+      context: docker/php
+      args:
+        PHP_VERSION: "8.2"
+        COMPOSE_PROJECT_NAME: llphant
+        UID: 1000
+        GID: 1000
+    restart: on-failure
+    user: root
+    volumes:
+      # Bind-mount the cloned source so edits are live
+      - .:/var/llphant
+      # Dev-only status page (not part of the library)
+      - /tmp/llphant-status:/status
+    ports:
+      - "3000:3000"
+    working_dir: /var/llphant
+    command: ["sh", "-ec", "composer install --no-interaction --prefer-dist && exec php -S 0.0.0.0:3000 /status/index.php"]
+    environment:
+      - BASE44_PREVIEW_MODE
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -sf http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
